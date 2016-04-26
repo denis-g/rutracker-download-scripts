@@ -11,6 +11,7 @@
 # Variables
 ################################################################################
 export LANG=C
+LC_ALL=C # fix charset
 
 TR_CATEGORY="$1"
 
@@ -37,7 +38,7 @@ echo "Let's Go!\n"
 ################################################################################
 echo 'Connecting to Transmission Remote...'
 
-TM_SESSID=$(curl "http://$TM_HOST:$TM_PORT/transmission/rpc" \
+TM_SESSID=$(curl "https://$TM_HOST:$TM_PORT/transmission/rpc" \
   --anyauth --user "$TM_USER":"$TM_PASS" \
   --silent '> /dev/null' \
   | sed 's/.*<code>//g;s/<\/code>.*//g'
@@ -58,7 +59,7 @@ total_links=$(cat $magnet_list \
 i=1
 
 for link in $(cat $magnet_list); do
-  curl "http://$TM_HOST:$TM_PORT/transmission/rpc" \
+  curl "https://$TM_HOST:$TM_PORT/transmission/rpc" \
     --anyauth --user "$TM_USER":"$TM_PASS" \
     --header "$TM_SESSID" \
     -d "{\"method\":\"torrent-add\",\"arguments\":{\"filename\":\"$link\"}}" \

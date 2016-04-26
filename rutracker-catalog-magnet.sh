@@ -10,6 +10,7 @@
 # Variables
 ################################################################################
 export LANG=C
+LC_ALL=C # fix charset
 
 TR_HOST='rutracker.org'
 TR_CATEGORY="$1"
@@ -53,13 +54,13 @@ fi
 ################################################################################
 echo 'Get total pages in category...'
 
-category_page=$(curl "http://$TR_HOST/forum/viewforum.php?f=$TR_CATEGORY&start=0" \
+category_page=$(curl "https://$TR_HOST/forum/viewforum.php?f=$TR_CATEGORY&start=0" \
   -A "$SC_UA" \
   --silent '> /dev/null'
 )
 
 # find latest pager link
-# <a class="pg" href="viewforum.php?f=###&amp;start=###">###</a>&nbsp;&nbsp;
+# &nbsp;&nbsp;<a class="pg" href="viewforum.php?f=###&amp;start=###">###</a>
 total_pages=$(echo $category_page \
   | sed -En 's/.*<a class=\"pg\" href=\".*\">([0-9]*)<\/a>&nbsp;&nbsp;.*/\1/p' \
   | head -1
@@ -76,7 +77,7 @@ echo 'Download category pages...'
 
 for page in $(seq 1 $total_pages); do
   page_link=$((page * 50 - 50)) # 50 items per page, ex. 0..50..100
-  category_pages=$(curl "http://$TR_HOST/forum/viewforum.php?f=$TR_CATEGORY&start=$page_link" \
+  category_pages=$(curl "https://$TR_HOST/forum/viewforum.php?f=$TR_CATEGORY&start=$page_link" \
     -A "$SC_UA" \
     --silent '> /dev/null'
   )
@@ -129,7 +130,7 @@ else
 fi
 
 for id in $(cat $id_list); do
-  torrent_page=$(curl "http://$TR_HOST/forum/viewtopic.php?t=$id" \
+  torrent_page=$(curl "https://$TR_HOST/forum/viewtopic.php?t=$id" \
     -A "$SC_UA" \
     --silent '> /dev/null' \
   )

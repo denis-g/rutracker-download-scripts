@@ -10,6 +10,7 @@
 # Variables
 ################################################################################
 export LANG=C
+LC_ALL=C # fix charset
 
 TR_USER=''
 TR_PASSWORD=''
@@ -63,7 +64,7 @@ fi
 echo 'User authentication...'
 
 if [ -w $SC_COOKIE ]; then
-  auth_page=$(curl "http://$TR_HOST/forum/index.php" \
+  auth_page=$(curl "https://$TR_HOST/forum/index.php" \
     -b "$SC_COOKIE" \
     -c "$SC_COOKIE" \
     -A "$SC_UA" \
@@ -77,7 +78,7 @@ fi
 sleep 1
 
 if [ -z $username ]; then
-  auth_path="http://login.$TR_HOST/forum/login.php"
+  auth_path="https://login.$TR_HOST/forum/login.php"
   if [ -w $SC_COOKIE ]; then
     cookie_data=$(cat "$SC_COOKIE")
     curl "$auth_path" \
@@ -110,7 +111,7 @@ sleep 1
 ################################################################################
 echo 'Get total pages in category...'
 
-category_page=$(curl "http://$TR_HOST/forum/viewforum.php?f=$TR_CATEGORY&start=0" \
+category_page=$(curl "https://$TR_HOST/forum/viewforum.php?f=$TR_CATEGORY&start=0" \
   -b "$SC_COOKIE" \
   -c "$SC_COOKIE" \
   -A "$SC_UA" \
@@ -137,7 +138,7 @@ echo 'Download category pages...'
 
 for page in $(seq 1 $total_pages); do
   page_link=$((page * 50 - 50)) # 50 items per page, ex. 0..50..100
-  category_pages=$(curl "http://$TR_HOST/forum/viewforum.php?f=$TR_CATEGORY&start=$page_link" \
+  category_pages=$(curl "https://$TR_HOST/forum/viewforum.php?f=$TR_CATEGORY&start=$page_link" \
     -b "$SC_COOKIE" \
     -c "$SC_COOKIE" \
     -A "$SC_UA" \
@@ -192,7 +193,7 @@ for id in $(cat "$id_list"); do
     -b "$SC_COOKIE" \
     -c "$SC_COOKIE" \
     -A "$SC_UA" \
-    -e "http://$TR_HOST/forum/viewtopic.php?t=$id" "http://dl.$TR_HOST/forum/dl.php?t=$id" \
+    -e "https://$TR_HOST/forum/viewtopic.php?t=$id" "https://dl.$TR_HOST/forum/dl.php?t=$id" \
     -o "$DIR_DWN_CAT/[rutracker.org].t$id.torrent" \
     --silent > /dev/null
   printf "\rDownloaded files : %d of $total_id" $i
