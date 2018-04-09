@@ -1,23 +1,22 @@
 #!/usr/bin/env bash
-#
+export LC_ALL=C
+
 # rutracker-catalog-torrent
 # Download .torrent-files from custom category ID
-# Usage : rutracker-catalog-torrent.sh <ID_CATEGORY>
+# Usage : sh rutracker-catalog-torrent.sh <ID_CATEGORY>
 #
-# Copyright (c) 2016 Denis Guriyanov <denis.guriyanov@gmail.com>
+# Copyright (c) 2018 Denis Guriyanov <denisguriyanov@gmail.com>
 
 
 # Variables
 ################################################################################
-export LANG=C
-LC_ALL=C # fix charset
-
 TR_USER=''
 TR_PASSWORD=''
 
 TR_HOST='rutracker.org'
+TR_PROTOCOL='https'
 TR_CATEGORY="$1"
-TR_TIMEOUT='3'
+TR_TIMEOUT='3' # in sec
 
 DIR_DWN="$HOME/Downloads/Torrents" # $HOME equal ~
 DIR_DWN_CAT="$DIR_DWN/$TR_CATEGORY"
@@ -64,11 +63,13 @@ fi
 echo 'User authentication...'
 
 if [ -w $SC_COOKIE ]; then
-  auth_page=$(curl "https://$TR_HOST/forum/index.php" \
+  auth_page=$(curl "$TR_PROTOCOL://$TR_HOST/index.php" \
     -b "$SC_COOKIE" \
     -c "$SC_COOKIE" \
     -A "$SC_UA" \
-    --silent '> /dev/null'
+    --show-error \
+    -L \
+    -s
   )
   username=$(echo "$auth_page" | egrep -o "$TR_USER")
   # DEBUG
@@ -78,7 +79,7 @@ fi
 sleep 1
 
 if [ -z $username ]; then
-  auth_path="https://login.$TR_HOST/forum/login.php"
+  auth_path="$TR_PROTOCOL://login.$TR_HOST/login.php"
   if [ -w $SC_COOKIE ]; then
     cookie_data=$(cat "$SC_COOKIE")
     curl "$auth_path" \
@@ -89,7 +90,9 @@ if [ -z $username ]; then
       -d "login_username=$TR_USER" \
       -d "login_password=$TR_PASSWORD" \
       --data-binary 'login=%C2%F5%EE%E4' \
-      --silent > /dev/null
+      --show-error \
+      -L \
+      -s
   else
     curl "$auth_path" \
       --trace-ascii - \
@@ -98,7 +101,9 @@ if [ -z $username ]; then
       -d "login_username=$TR_USER" \
       -d "login_password=$TR_PASSWORD" \
       --data-binary 'login=%C2%F5%EE%E4' \
-      --silent > /dev/null
+      --show-error \
+      -L \
+      -s
   fi
 fi
 
@@ -111,13 +116,15 @@ sleep 1
 ################################################################################
 echo 'Get total pages in category...'
 
-category_page=$(curl "https://$TR_HOST/forum/viewforum.php?f=$TR_CATEGORY&start=0" \
+category_page=$(curl "$TR_PROTOCOL://$TR_HOST/viewforum.php?f=$TR_CATEGORY&start=0" \
   -b "$SC_COOKIE" \
   -c "$SC_COOKIE" \
   -A "$SC_UA" \
   -d 'o=10' \
   -d 's=2' \
-  --silent '> /dev/null'
+  --show-error \
+  -L \
+  -s
 )
 
 # find latest pager link
@@ -137,14 +144,16 @@ sleep 1
 echo 'Download category pages...'
 
 for page in $(seq 1 $total_pages); do
-  page_link=$((page * 50 - 50)) # 50 items per page, ex. 0..50..100
-  category_pages=$(curl "https://$TR_HOST/forum/viewforum.php?f=$TR_CATEGORY&start=$page_link" \
+  page_link=$((page * 50 - 50)) # 50 items per page - 0..50..100
+  category_pages=$(curl "$TR_PROTOCOL://$TR_HOST/viewforum.php?f=$TR_CATEGORY&start=$page_link" \
     -b "$SC_COOKIE" \
     -c "$SC_COOKIE" \
     -A "$SC_UA" \
     -d 'o=10' \
     -d 's=2' \
-    --silent '> /dev/null'
+    --show-error \
+    -L \
+    -s
   )
   echo "$category_pages" > "$DIR_TMP_CAT/page_$page.html"
   printf "\rCurrent page : %d of $total_pages" $page
@@ -193,9 +202,11 @@ for id in $(cat "$id_list"); do
     -b "$SC_COOKIE" \
     -c "$SC_COOKIE" \
     -A "$SC_UA" \
-    -e "https://$TR_HOST/forum/viewtopic.php?t=$id" "https://dl.$TR_HOST/forum/dl.php?t=$id" \
+    -e "$TR_PROTOCOL://$TR_HOST/viewtopic.php?t=$id" "$TR_PROTOCOL://dl.$TR_HOST/dl.php?t=$id" \
     -o "$DIR_DWN_CAT/[rutracker.org].t$id.torrent" \
-    --silent > /dev/null
+    --show-error \
+    -L \
+    -s
   printf "\rDownloaded files : %d of $total_id" $i
 
   i=$((i+1))
@@ -205,7 +216,6 @@ done
 echo "\n...complete!\n"
 
 sleep 1
-exit
 
 
 # FINISH

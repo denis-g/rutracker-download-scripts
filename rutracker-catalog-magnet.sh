@@ -1,21 +1,19 @@
 #!/usr/bin/env bash
-#
+export LC_ALL=C
+
 # rutracker-catalog-magnet
-# Create list with magnet urls from custom category ID
-# Usage : rutracker-catalog-magnet.sh <ID_CATEGORY>
+# Create list with magnet url's from custom category ID
+# Usage : sh rutracker-catalog-magnet.sh <ID_CATEGORY>
 #
-# Copyright (c) 2016 Denis Guriyanov <denis.guriyanov@gmail.com>
+# Copyright (c) 2018 Denis Guriyanov <denisguriyanov@gmail.com>
 
 
 # Variables
 ################################################################################
-export LANG=C
-LC_ALL=C # fix charset
-
-TR_HOST='rutracker.org'
+TR_URL='https://rutracker.org/forum'
 TR_CATEGORY="$1"
 
-DIR_DWN="$HOME/Downloads/Torrents" # $HOME equal ~
+DIR_DWN="$HOME/Downloads/Torrents"
 DIR_TMP='/tmp/rds'
 DIR_TMP_CAT="$DIR_TMP/category_$TR_CATEGORY"
 
@@ -54,13 +52,15 @@ fi
 ################################################################################
 echo 'Get total pages in category...'
 
-category_page=$(curl "https://$TR_HOST/forum/viewforum.php?f=$TR_CATEGORY&start=0" \
+category_page=$(curl "$TR_URL/viewforum.php?f=$TR_CATEGORY&start=0" \
   -A "$SC_UA" \
-  --silent '> /dev/null'
+  --show-error \
+  -L \
+  -s
 )
 
 # find latest pager link
-# &nbsp;&nbsp;<a class="pg" href="viewforum.php?f=###&amp;start=###">###</a>
+# <a class="pg" href="viewforum.php?f=###&amp;start=###">###</a>&nbsp;&nbsp;
 total_pages=$(echo $category_page \
   | sed -En 's/.*<a class=\"pg\" href=\".*\">([0-9]*)<\/a>&nbsp;&nbsp;.*/\1/p' \
   | head -1
@@ -77,9 +77,11 @@ echo 'Download category pages...'
 
 for page in $(seq 1 $total_pages); do
   page_link=$((page * 50 - 50)) # 50 items per page, ex. 0..50..100
-  category_pages=$(curl "https://$TR_HOST/forum/viewforum.php?f=$TR_CATEGORY&start=$page_link" \
+  category_pages=$(curl "$TR_URL/viewforum.php?f=$TR_CATEGORY&start=$page_link" \
     -A "$SC_UA" \
-    --silent '> /dev/null'
+    --show-error \
+    -L \
+    -s
   )
   echo "$category_pages" > "$DIR_TMP_CAT/category_page_$page.html"
   printf "\rProgress : %d of $total_pages" $page
@@ -130,15 +132,18 @@ else
 fi
 
 for id in $(cat $id_list); do
-  torrent_page=$(curl "https://$TR_HOST/forum/viewtopic.php?t=$id" \
+  torrent_page=$(curl "$TR_URL/viewtopic.php?t=$id" \
     -A "$SC_UA" \
-    --silent '> /dev/null' \
+    --show-error \
+    -L \
+    -s
   )
   # find magnet link on page
   # <a href="magnet:###">
   magnet_link=$(echo $torrent_page \
     | sed -En 's/.*<a.*href=\"(magnet:[^"]*)\".*>.*/\1/p'
   )
+
   if [ $magnet_link ]; then
     echo "$magnet_link" >> "$magnet_list"
   fi

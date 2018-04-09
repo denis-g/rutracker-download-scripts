@@ -1,26 +1,25 @@
 #!/usr/bin/env bash
-#
+export LC_ALL=C
+
 # transmission-remote-magnet
 # Add magnet urls to Transmission Remote
-# Usage : transmission-remote-magnet.sh <ID_CATEGORY>
+# Usage : sh transmission-remote-magnet.sh <ID_CATEGORY>
 #
-# Copyright (c) 2016 Denis Guriyanov <denis.guriyanov@gmail.com>
+# Copyright (c) 2018 Denis Guriyanov <denisguriyanov@gmail.com>
 # Modified from https://gist.github.com/sbisbee/8215353
 
 
 # Variables
 ################################################################################
-export LANG=C
-LC_ALL=C # fix charset
-
-TR_CATEGORY="$1"
-
-DIR_DWN="$HOME/Downloads/Torrents" # $HOME equal ~
-
-TM_HOST='192.168.1.1'
+TM_HOST=''
 TM_PORT='9091' # 9091 is default port
 TM_USER=''
 TM_PASS=''
+
+TR_CATEGORY="$1"
+TR_TIMEOUT='0.30'
+
+DIR_DWN="$HOME/Downloads/Torrents" # $HOME equal ~
 
 
 # BEGIN
@@ -38,9 +37,11 @@ echo "Let's Go!\n"
 ################################################################################
 echo 'Connecting to Transmission Remote...'
 
-TM_SESSID=$(curl "https://$TM_HOST:$TM_PORT/transmission/rpc" \
+TM_SESSID=$(curl "http://$TM_HOST:$TM_PORT/transmission/rpc" \
   --anyauth --user "$TM_USER":"$TM_PASS" \
-  --silent '> /dev/null' \
+  --show-error \
+  -L \
+  -s \
   | sed 's/.*<code>//g;s/<\/code>.*//g'
 )
 
@@ -59,17 +60,22 @@ total_links=$(cat $magnet_list \
 i=1
 
 for link in $(cat $magnet_list); do
-  curl "https://$TM_HOST:$TM_PORT/transmission/rpc" \
+  curl "http://$TM_HOST:$TM_PORT/transmission/rpc" \
     --anyauth --user "$TM_USER":"$TM_PASS" \
     --header "$TM_SESSID" \
     -d "{\"method\":\"torrent-add\",\"arguments\":{\"filename\":\"$link\"}}" \
-    --silent > /dev/null
+    --show-error \
+    -L \
+    -o /dev/null \
+    -s
 
   printf "\rProgress : %d of $total_links" $i
   i=$((i+1))
+
+  sleep "$TR_TIMEOUT" # fix massive request
 done
 
-echo "...complete!\n"
+echo "\n...complete!\n"
 
 
 # FINISH
