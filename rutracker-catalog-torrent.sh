@@ -10,13 +10,13 @@ export LC_ALL=C
 
 # Variables
 ################################################################################
-TR_USER=''
-TR_PASSWORD=''
+TR_USER='HatulMaimud'
+TR_PASSWORD='ehYCJ'
 
 TR_HOST='rutracker.org'
 TR_PROTOCOL='https'
 TR_CATEGORY="$1"
-TR_TIMEOUT='3' # in sec
+TR_TIMEOUT='1' # in sec
 
 DIR_DWN="$HOME/Downloads/Torrents" # $HOME equal ~
 DIR_DWN_CAT="$DIR_DWN/$TR_CATEGORY"
@@ -73,13 +73,13 @@ if [ -w $SC_COOKIE ]; then
   )
   username=$(echo "$auth_page" | egrep -o "$TR_USER")
   # DEBUG
-  # echo "$auth_page" > "$DIR_TMP"/page_auth.html
+  echo "$auth_page" > "$DIR_TMP"/page_auth.html
 fi
 
 sleep 1
 
 if [ -z $username ]; then
-  auth_path="$TR_PROTOCOL://login.$TR_HOST/login.php"
+  auth_path="$TR_PROTOCOL://$TR_HOST/forum/login.php"
   if [ -w $SC_COOKIE ]; then
     cookie_data=$(cat "$SC_COOKIE")
     curl "$auth_path" \
@@ -116,7 +116,7 @@ sleep 1
 ################################################################################
 echo 'Get total pages in category...'
 
-category_page=$(curl "$TR_PROTOCOL://$TR_HOST/viewforum.php?f=$TR_CATEGORY&start=0" \
+category_page=$(curl "$TR_PROTOCOL://$TR_HOST/forum/viewforum.php?f=$TR_CATEGORY&start=0" \
   -b "$SC_COOKIE" \
   -c "$SC_COOKIE" \
   -A "$SC_UA" \
@@ -134,6 +134,7 @@ total_pages=$(echo "$category_page" \
   | head -1
 )
 
+
 echo "...complete!\n"
 
 sleep 1
@@ -145,7 +146,7 @@ echo 'Download category pages...'
 
 for page in $(seq 1 $total_pages); do
   page_link=$((page * 50 - 50)) # 50 items per page - 0..50..100
-  category_pages=$(curl "$TR_PROTOCOL://$TR_HOST/viewforum.php?f=$TR_CATEGORY&start=$page_link" \
+  category_pages=$(curl "$TR_PROTOCOL://$TR_HOST/forum/viewforum.php?f=$TR_CATEGORY&start=$page_link" \
     -b "$SC_COOKIE" \
     -c "$SC_COOKIE" \
     -A "$SC_UA" \
@@ -202,7 +203,7 @@ for id in $(cat "$id_list"); do
     -b "$SC_COOKIE" \
     -c "$SC_COOKIE" \
     -A "$SC_UA" \
-    -e "$TR_PROTOCOL://$TR_HOST/viewtopic.php?t=$id" "$TR_PROTOCOL://dl.$TR_HOST/dl.php?t=$id" \
+    -e "$TR_PROTOCOL://$TR_HOST/forum/viewtopic.php?t=$id" "$TR_PROTOCOL://$TR_HOST/forum/dl.php?t=$id" \
     -o "$DIR_DWN_CAT/[rutracker.org].t$id.torrent" \
     --show-error \
     -L \
