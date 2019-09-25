@@ -10,8 +10,8 @@ export LC_ALL=C
 
 # Variables
 ################################################################################
-TR_USER='HatulMaimud'
-TR_PASSWORD='ehYCJ'
+TR_USER=''
+TR_PASSWORD=''
 
 TR_HOST='rutracker.org'
 TR_PROTOCOL='https'
